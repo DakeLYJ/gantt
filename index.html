@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>甘特图生成器</title>
+    <!-- 引入dhtmlxGantt的CSS -->
+    <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
+    <!-- 引入xlsx.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <!-- 引入dhtmlxGantt的JS -->
+    <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
+    <style>
+	    body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #upload-section {
+            margin-bottom: 20px;
+        }
+        #gantt_here {
+            width: 180%;
+            height: 400px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>甘特图生成器</h1>
+    <form id="uploadForm">
+        <input type="file" id="fileInput" accept=".xlsx, .xls" />
+        <button type="submit" >上传表格</button>
+		<button onclick="refreshPage()">重置</button>
+		
+    </form>
+    <div id="gantt_here"></div>
+
+    <script>
+	    // 初始化甘特图配置
+        gantt.config.xml_date = "%Y.%m.%d";
+		// 配置自定义列
+        gantt.config.columns = [
+            {name: "text",    label: "阶段",  tree: true, width: 120},
+            {name: "机房", label: "机房", align: "left", width: 150},
+            {name: "初步需求", label: "初步需求", align: "left", width: 230},
+            {name: "start_date", label: "录入日期", align: "left", width: 120},
+            {name: "end_date", label: "结束日期", align: "left", width: 120},
+            {name: "来源部门", label: "来源部门", align: "left", width: 200},
+            {name: "承接人", label: "承接人", align: "left", width: 70},
+            {name: "客户经理", label: "客户经理", align: "left", width: 70},
+            {name: "商机编号", label: "商机编号", align: "left", width: 80},
+            {name: "匹配机房", label: "匹配机房", align: "left", width: 230},
+            {name: "项目最新进展", label: "项目最新进展", align: "left", width: 250},
+            {name: "资源推荐号", label: "资源推荐号", align: "left", width: 120},
+            {name: "方案评审名称", label: "方案评审名称", align: "left", width: 120},//自定义列
+        ];
+		
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var fileInput = document.getElementById('fileInput');
+            var file = fileInput.files[0];
+
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var data = new Uint8Array(e.target.result);
+                    var workbook = XLSX.read(data, { type: 'array' });
+
+                    // 假设只处理第一个工作表
+                    var worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 2 }); // header: 1 表示第一行是表头
+
+                    // 提取E列及之后的列作为甘特图的数据
+                    var ganttData = jsonData.slice(0).map(function(row) {
+                        var task = {
+                            text: row['阶段'],
+                            机房: row['机房'],
+                            初步需求: row['初步需求'],
+							start_date: row['录入日期'],
+							end_date: row['结束日期'],
+							来源部门: row['来源部门'],
+							承接人: row['承接人'],
+							客户经理: row['客户经理'],
+							商机编号: row['商机编号'],
+							匹配机房: row['匹配机房'],
+							项目最新进展: row['项目最新进展'],
+							资源推荐号: row['资源推荐号'],
+							方案评审名称: row['方案评审名称']
+                        };
+                        // 如果还有其他需要的字段，可以继续添加
+                        return task;
+                    });
+
+                    // 初始化gantt图
+                    gantt.init("gantt_here");
+                    gantt.parse({ data: ganttData });
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                alert('请上传表格!');
+            }
+        });
+
+        // 初始化dhtmlxGantt对象（需要在DOM加载完成后）
+        window.onload = function() {
+            gantt = new dhtmlXGantt("gantt_here");
+        };
+		function refreshPage() {
+            location.reload(); // 重新加载当前页面
+        }
+		
+
+    </script>
+</body>
+</html>
